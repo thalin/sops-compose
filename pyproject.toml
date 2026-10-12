@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sops-compose"
+version = "0.1.0"
+description = "Author sops creation rules as split YAML with named keys and composable groups"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = ["ruamel.yaml>=0.18"]
+
+[project.scripts]
+sops-compose = "sops_compose.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

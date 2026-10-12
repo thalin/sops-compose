@@ -1,0 +1,7 @@
+- id: sops-compose
+  name: sops-compose render
+  description: Re-render .sops.yaml from sops/ (fails the commit if it changed, so you can stage it)
+  entry: sops-compose render
+  language: python
+  files: ^(sops/|\.sops\.yaml$)
+  pass_filenames: false
