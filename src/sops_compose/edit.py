@@ -6,6 +6,7 @@ survive. Both functions only touch sources; the caller re-renders.
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
@@ -50,7 +51,13 @@ def add_key(root: Path, name: str, age_key: str, comment: str | None = None) -> 
 
     y = round_trip_yaml()
     file = root / SOURCE_DIR / KEYS_DIR / f"{ns}.yaml"
-    doc = (y.load(file) if file.exists() else None) or CommentedMap()
+    doc = y.load(file) if file.exists() else None
+    # A file holding only comments loads as None, and ruamel would drop the
+    # comments on dump; keep its text and write the keys after it.
+    preamble = file.read_text() if doc is None and file.exists() else ""
+    if preamble and not preamble.endswith("\n"):
+        preamble += "\n"
+    doc = doc or CommentedMap()
 
     node = doc
     for i, part in enumerate(parts[1:-1], start=1):
@@ -68,12 +75,16 @@ def add_key(root: Path, name: str, age_key: str, comment: str | None = None) -> 
     status = "added" if current is None else ("unchanged" if current == age_key else "updated")
     node[leaf] = age_key
     if comment:
-        node.yaml_add_eol_comment(f"# {comment}", leaf)
+        # One space after the value; ruamel's default varies with context.
+        column = 2 * (len(parts) - 2) + len(f"{leaf}: {age_key} ")
+        node.yaml_add_eol_comment(f"# {comment}", leaf, column=column)
         if status == "unchanged":
             status = "updated"
     if status != "unchanged":
         file.parent.mkdir(parents=True, exist_ok=True)
-        y.dump(doc, file)
+        buf = io.StringIO()
+        y.dump(doc, buf)
+        file.write_text(preamble + buf.getvalue())
     return status
 
 

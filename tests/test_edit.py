@@ -26,6 +26,15 @@ def test_add_key_preserves_comments_and_renders(repo, run):
     assert NEW in rendered(repo)[0]["age"]
 
 
+def test_add_key_keeps_comments_in_a_file_with_no_keys_yet(repo, run):
+    (repo / "sops/keys/servers.yaml").write_text("# Server keys, managed by noa-install\n")
+    code, _, err = run(repo, "add-key", "servers.delta", NEW, "--comment", "x")
+    assert code == 0, err
+    text = (repo / "sops/keys/servers.yaml").read_text()
+    assert text.startswith("# Server keys, managed by noa-install\n")
+    assert f"delta: {NEW} # x" in text
+
+
 def test_add_key_is_idempotent(repo, run):
     run(repo, "add-key", "hosts.delta", NEW)
     before = (repo / "sops/keys/hosts.yaml").read_text()
